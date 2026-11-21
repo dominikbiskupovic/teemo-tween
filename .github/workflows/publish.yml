@@ -1,5 +1,6 @@
 name: Release
 
+# npm trusted publisher: dominikbiskupovic/teemo-tween, workflow publish.yml (keep this filename).
 # On every push to main: if changesets are pending, open or update the "Version packages" PR.
 # When that PR is merged (no changesets left, version bumped), scripts/release.sh stages the new
 # version on npm through trusted publishing (OIDC). A maintainer then approves it with 2FA on
