@@ -1,0 +1,13 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts", "src/presets/index.ts", "src/react/index.ts"],
+  "out": "docs-api",
+  "name": "teemo-tween",
+  "readme": "none",
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "includeVersion": true,
+  "githubPages": true,
+  "treatWarningsAsErrors": false,
+  "logLevel": "Warn"
+}
