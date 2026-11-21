@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [],
+    "paths": {
+      "teemo-tween": ["./src/index.ts"],
+      "teemo-tween/presets": ["./src/presets/index.ts"],
+      "teemo-tween/react": ["./src/react/index.ts"]
+    }
+  },
+  "include": ["src", "test", "demo/src", "*.config.ts"]
+}
