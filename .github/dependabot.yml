@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # typescript-eslint and TypeDoc do not support TypeScript 7 yet (see VERSIONS.md).
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     groups:
       dev-dependencies:
         dependency-type: development
