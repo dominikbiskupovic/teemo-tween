@@ -76,7 +76,7 @@ hitStop(0.05)           // freeze every animation for a moment
 
 Every tween takes `duration`, `ease`, `startDelay`, `endDelay`, `cycles` (-1 is endless), `cycleMode` (`restart`, `yoyo`, `rewind`, `incremental`) and `onComplete`. A tween or sequence can be awaited (`await t` or `t.finished`), and has `stop()`, `complete()`, `isAlive`, `isPaused`, `timeScale` and `duration`.
 
-**Targets.** DOM and SVG elements (GSAP transforms, opacity, colours, CSS variables) and plain objects for canvas or game state (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `alpha`, `color` fields).
+**Targets.** DOM and SVG elements (GSAP transforms, opacity, colours, CSS variables) and plain objects for canvas or game state (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `alpha`, `color` fields). On HTML elements `Tween.color` animates `background-color` by default; a `background-image` (such as a gradient) paints over it, so pass `property: 'color'` or another property when needed.
 
 **Eases.** All 30 curves from [easings.net](https://easings.net) plus `linear`, using the same formulas. Pick one PrimeTween-style with the `Ease` constants, or as a string:
 

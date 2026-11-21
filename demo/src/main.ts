@@ -147,22 +147,34 @@ const examples: Example[] = [
   },
   {
     group: 'core', title: 'Tween.color / alpha',
-    code: `Tween.color(el, { to: '#5be3a4', cycles: 2, cycleMode: 'yoyo' })`,
-    build: (s) => [tile(s, '🎨')],
-    play: ([el]) => Tween.color(el!, { to: '#5be3a4', duration: 0.35, cycles: 2, cycleMode: 'yoyo' }),
+    code: `Tween.color(el, { to: '#5be3a4', cycles: 2, cycleMode: 'yoyo' })\nTween.alpha(el, { to: 0.25, cycles: 2, cycleMode: 'yoyo' })\n// color tweens background-color: gradients paint over it`,
+    build: (s) => [tile(s, '🎨', 'flat')],
+    play: ([el]) => {
+      Tween.color(el!, { to: '#5be3a4', duration: 0.4, cycles: 2, cycleMode: 'yoyo' });
+      return Tween.alpha(el!, { to: 0.25, duration: 0.4, cycles: 2, cycleMode: 'yoyo', reducedMotion: 'animate' });
+    },
   },
   {
     group: 'core', title: 'cycle modes',
-    code: `// one row each: restart, yoyo, rewind, incremental\nTween.position(el, { to: { x: 40 }, cycles: 3, cycleMode, ease: 'inQuad' })`,
+    code: `// 4 cycles of outBack, one row per mode:\n// restart snaps back, yoyo overshoots at both ends,\n// rewind plays the move backwards, incremental steps on\nTween.position(dot, { to: { x: 120 }, cycles: 4, cycleMode, ease: Ease.OutBack })`,
     build: (s) => {
       s.classList.add('rows');
-      return (['restart', 'yoyo', 'rewind', 'incremental'] as const).map((m) => tile(s, m, 'pill'));
+      return (['restart', 'yoyo', 'rewind', 'incremental'] as const).map((mode) => {
+        const row = document.createElement('div');
+        row.className = 'cycle-row';
+        row.innerHTML = `<span>${mode}</span><div class="cycle-track"><div class="dot"></div></div>`;
+        s.append(row);
+        return row.querySelector<HTMLElement>('.dot')!;
+      });
     },
-    play: (els) => {
+    play: (dots) => {
       const modes: CycleMode[] = ['restart', 'yoyo', 'rewind', 'incremental'];
-      els.forEach((el, i) => {
+      dots.forEach((dot, i) => {
         const cycleMode = modes[i]!;
-        Tween.position(el, { from: { x: -60 }, to: { x: cycleMode === 'incremental' ? -20 : 40 }, duration: 0.5, cycles: 3, cycleMode, ease: 'inQuad' });
+        Tween.position(dot, {
+          from: { x: 0 }, to: { x: cycleMode === 'incremental' ? 30 : 120 },
+          duration: 0.5, cycles: 4, cycleMode, ease: Ease.OutBack, reducedMotion: 'animate',
+        });
       });
     },
   },

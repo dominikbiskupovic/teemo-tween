@@ -41,6 +41,21 @@ describe('property tweens', () => {
     expect(gsap.getProperty(d, 'scaleY')).toBe(2);
     expect(gsap.getProperty(d, 'rotation')).toBe(45);
     expect(d.style.opacity).toBe('0.5');
+    // The CSS a browser receives, not just GSAP's cache: every part must carry a valid unit.
+    expect(d.style.transform).toBe('translate(30px, -10px) rotate(45deg) scale(2)');
+  });
+
+  it('writes valid CSS for rotations from every kind of tween', () => {
+    const d = el();
+    Tween.rotation(d, { from: 0, to: 30, duration: 1, ease: 'linear' });
+    advance(0.5);
+    expect(d.style.transform).toMatch(/^rotate\(15(\.\d+)?deg\)$/);
+    Tween.punchRotation(d, { strength: 20, duration: 1 });
+    advance(0.1);
+    expect(d.style.transform).toMatch(/rotate\(-?\d+(\.\d+)?deg\)/);
+    Tween.properties(d, { to: { rotation: 90 }, duration: 0.1 });
+    advance(0.2);
+    expect(d.style.transform).toBe('rotate(90deg)');
   });
 
   it('scale takes separate axes and alpha uses the alpha field on objects', () => {

@@ -14,13 +14,17 @@ export const isElement = (target: unknown): target is Element =>
 export const isSvg = (target: unknown): target is SVGElement =>
   typeof SVGElement !== 'undefined' && target instanceof SVGElement;
 
-/** Element properties set through GSAP's fast setter, with their unit. */
+/**
+ * Element properties set through GSAP's fast setter, with the unit GSAP's transform cache expects.
+ * GSAP writes the cached value straight into the CSS (`rotate(` + value + `)`), so rotation needs
+ * `deg`: a bare number would produce invalid CSS that browsers silently drop.
+ */
 const QUICK: Record<string, string> = {
   x: 'px',
   y: 'px',
   scaleX: '',
   scaleY: '',
-  rotation: '',
+  rotation: 'deg',
   opacity: '',
 };
 
