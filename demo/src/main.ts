@@ -1,4 +1,4 @@
-import { configure, Sequence, Tween, type CycleMode } from 'teemo-tween';
+import { configure, Ease, EASE_NAMES, resolveEase, Sequence, Tween, type CycleMode, type EaseName } from 'teemo-tween';
 import * as P from 'teemo-tween/presets';
 import './style.css';
 
@@ -138,11 +138,11 @@ const examples: Example[] = [
   },
   {
     group: 'core', title: 'Tween.scale / rotation',
-    code: `Tween.scale(el, { from: 0.4, to: 1, ease: 'outElastic', duration: 0.8 })\nTween.rotation(el, { from: -90, to: 0, ease: 'outBack' })`,
+    code: `Tween.scale(el, { from: 0.4, to: 1, ease: Ease.OutElastic, duration: 0.8 })\nTween.rotation(el, { from: -90, to: 0, ease: Ease.OutBack })`,
     build: (s) => [tile(s, '⟳')],
     play: ([el]) => {
-      Tween.scale(el!, { from: 0.4, to: 1, ease: 'outElastic', duration: 0.8 });
-      Tween.rotation(el!, { from: -90, to: 0, ease: 'outBack', duration: 0.5 });
+      Tween.scale(el!, { from: 0.4, to: 1, ease: Ease.OutElastic, duration: 0.8 });
+      Tween.rotation(el!, { from: -90, to: 0, ease: Ease.OutBack, duration: 0.5 });
     },
   },
   {
@@ -178,6 +178,52 @@ const examples: Example[] = [
         .chain(Tween.scale(el!, { to: 1, ease: 'outBack' }))
         .group(Tween.rotation(el!, { to: 0 }))
         .insert(0.15, Tween.shakePosition(el!, { strength: 5 })),
+  },
+  {
+    group: 'core', title: 'Ease explorer',
+    code: `// all 30 easings.net curves + linear\nTween.position(dot, { to: { x: 200 }, ease: Ease.OutBack })\n// or ease: 'outBack', or configure({ defaultEase: Ease.OutBack })`,
+    build: (s) => {
+      s.classList.add('ease-explorer');
+      const select = document.createElement('select');
+      select.setAttribute('aria-label', 'Ease');
+      for (const name of EASE_NAMES) {
+        const key = name[0]!.toUpperCase() + name.slice(1);
+        select.add(new Option(`Ease.${key}`, name, false, name === 'outBack'));
+      }
+      const c = document.createElement('canvas');
+      c.width = 240; c.height = 110; c.className = 'canvas curve';
+      const track = tile(s, '', 'track ease-track');
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      track.append(dot);
+      s.insertBefore(c, track);
+      // A select can't live inside the stage button: put it in the card header.
+      s.closest('.card')!.querySelector('.meta')!.append(select);
+      const draw = () => {
+        const ctx = c.getContext('2d')!;
+        const f = resolveEase(select.value as EaseName);
+        const styles = getComputedStyle(document.documentElement);
+        ctx.clearRect(0, 0, 240, 110);
+        ctx.strokeStyle = styles.getPropertyValue('--line');
+        ctx.strokeRect(20.5, 25.5, 200, 60);
+        ctx.strokeStyle = '#ff8a3d';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let i = 0; i <= 100; i++) {
+          const x = 20 + i * 2;
+          const y = 85 - f(i / 100) * 60;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      };
+      select.addEventListener('change', () => { draw(); s.closest<HTMLElement>('.stage')!.click(); });
+      draw();
+      return [dot, select];
+    },
+    play: ([dot, select]) => {
+      const ease = (select as HTMLSelectElement).value as EaseName;
+      return Tween.position(dot!, { from: { x: 0 }, to: { x: 196 }, duration: 0.9, ease, reducedMotion: 'animate' });
+    },
   },
   {
     group: 'core', title: 'Tween.custom on a canvas',
@@ -231,7 +277,7 @@ const highlight = (code: string) =>
     .replace(/(\/\/.*)/g, '<span class="c">$1</span>')
     .replace(/('[^']*')/g, '<span class="s">$1</span>')
     .replace(/\b(await|const|return)\b/g, '<span class="k">$1</span>')
-    .replace(/\b(Tween|Sequence)\b/g, '<span class="t">$1</span>');
+    .replace(/\b(Tween|Sequence|Ease)\b/g, '<span class="t">$1</span>');
 
 const players: Array<() => void> = [];
 

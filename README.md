@@ -1,6 +1,6 @@
 # teemo-tween
 
-**Game feel for the web in one line.** Tweens, sequences and juicy presets (punch, shake, pop, count-up, impact) for browser games. Built on [GSAP](https://gsap.com), typed, tested, about 3.5 kB, and polite to players who prefer less motion.
+**Game feel for the web in one line.** Tweens, sequences and juicy presets (punch, shake, pop, count-up, impact) for browser games. Built on [GSAP](https://gsap.com), typed, tested, about 4 kB, and polite to players who prefer less motion.
 
 **[▶ Live demo: every tween and preset, with its code](https://dominikbiskupovic.github.io/teemo-tween/)** · [API reference](https://dominikbiskupovic.github.io/teemo-tween/api/)
 
@@ -11,7 +11,7 @@ npm i teemo-tween gsap
 ## Three examples
 
 ```ts
-import { Tween, Sequence } from 'teemo-tween';
+import { Tween, Sequence, Ease } from 'teemo-tween';
 import { popIn, impact, countUp } from 'teemo-tween/presets';
 
 // 1. A preset: one call, sensible defaults.
@@ -20,7 +20,7 @@ impact(player, { strength: 0.8, hitStop: 0.05 });
 countUp(scoreEl, { to: 12840 });
 
 // 2. A tween: awaitable, with cycles and any ease.
-await Tween.position(coin, { to: { y: -24 }, duration: 0.3, ease: 'outBack', cycles: 2, cycleMode: 'yoyo' });
+await Tween.position(coin, { to: { y: -24 }, duration: 0.3, ease: Ease.OutBack, cycles: 2, cycleMode: 'yoyo' });
 
 // 3. A sequence: chain, group, insert, delays and callbacks.
 Sequence.create()
@@ -28,7 +28,7 @@ Sequence.create()
   .group(Tween.rotation(tile, { to: 10 }))
   .chainDelay(0.1)
   .chainCallback(() => sound.play('pop'))
-  .chain(Tween.scale(tile, { to: 1, ease: 'outBack' }))
+  .chain(Tween.scale(tile, { to: 1, ease: Ease.OutBack }))
   .insert(0.15, Tween.shakePosition(tile, { strength: 5 }));
 ```
 
@@ -78,7 +78,17 @@ Every tween takes `duration`, `ease`, `startDelay`, `endDelay`, `cycles` (-1 is 
 
 **Targets.** DOM and SVG elements (GSAP transforms, opacity, colours, CSS variables) and plain objects for canvas or game state (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `alpha`, `color` fields).
 
-**Eases.** `'linear'` or `in`/`out`/`inOut` plus `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce` (e.g. `'outBack'`). You can also pass any `(t) => number` function, or use `eases.back(overshoot)`, `eases.elastic(amplitude, period)` or `eases.steps(n)`.
+**Eases.** All 30 curves from [easings.net](https://easings.net) plus `linear`, using the same formulas. Pick one PrimeTween-style with the `Ease` constants, or as a string:
+
+```ts
+import { Ease, configure } from 'teemo-tween';
+
+Tween.scale(el, { to: 1.2, ease: Ease.OutBack });   // same as ease: 'outBack'
+configure({ defaultEase: Ease.OutCubic });          // used when a tween has no ease
+Tween.alpha(el, { to: 0, ease: Ease.Default });     // ask for the default explicitly
+```
+
+Families: `Sine`, `Quad`, `Cubic`, `Quart`, `Quint`, `Expo`, `Circ`, `Back`, `Elastic`, `Bounce`, each as `In…`, `Out…` and `InOut…`. The default is `Ease.OutQuad`. You can also pass any `(t) => number` function, or build one with `eases.back(overshoot)`, `eases.elastic(amplitude, period)` or `eases.steps(n)`. `EASE_NAMES` lists every name (handy for menus).
 
 **Replacement rule.** When a tween starts on a property that another tween is animating (same target, same property, such as `x` or `opacity`), the old tween stops where it is and the new one continues from there. Different properties run side by side. A shake or punch puts its target back before it is replaced, so nothing drifts. Tweens inside the same sequence never replace each other.
 
@@ -130,7 +140,7 @@ Both hooks clean up on unmount and work under React 19 strict mode. The core doe
 ## Notes
 
 - **GSAP** is a peer dependency, so your game controls its version. GSAP is free for commercial use under Webflow's [standard licence](https://gsap.com/standard-license). teemo-tween does not bundle or redistribute it.
-- ESM only, tree-shakeable, types included. Core is about 3.5 kB brotli (excluding GSAP), and size budgets are enforced in CI.
+- ESM only, tree-shakeable, types included. Core is about 4 kB brotli (excluding GSAP), and size budgets are enforced in CI.
 - API inspired by PrimeTween for Unity. This is an independent library, not affiliated with it.
 
 ## Roadmap

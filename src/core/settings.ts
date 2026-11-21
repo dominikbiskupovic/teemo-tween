@@ -35,7 +35,7 @@ export interface ReducedMotionPolicy {
 }
 
 export interface Settings {
-  /** Default 'outQuad'. */
+  /** Used when a tween has no `ease` or `Ease.Default`. Any named ease or function. Default 'outQuad'. */
   defaultEase: Ease;
   /** Seconds. Default 0.3. */
   defaultDuration: number;
@@ -93,6 +93,9 @@ export function attach(animation: gsap.core.Animation): void {
 /** Changes global settings; returns the full settings now in force. */
 export function configure(input: SettingsInput): Settings {
   const { reducedMotionPolicy, ...rest } = input;
+  if (rest.defaultEase === 'default') {
+    throw new Error('teemo-tween: defaultEase cannot be "default"');
+  }
   if (rest.timeScale !== undefined && !(rest.timeScale >= 0)) {
     throw new Error('teemo-tween: timeScale must be 0 or more');
   }

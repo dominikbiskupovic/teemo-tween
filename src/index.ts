@@ -19,8 +19,8 @@ export type {
 } from './core/tween';
 export { Sequence } from './core/sequence';
 export type { SequenceOptions } from './core/sequence';
-export { eases, resolveEase } from './core/ease';
-export type { Ease, EaseFunction, EaseName } from './core/ease';
+export { Ease, EASE_NAMES, eases, resolveEase } from './core/ease';
+export type { EaseFunction, EaseName } from './core/ease';
 export {
   configure,
   getSettings,

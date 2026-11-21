@@ -26,7 +26,7 @@ export type CycleMode = 'restart' | 'yoyo' | 'rewind' | 'incremental';
 export interface TweenOptions {
   /** Seconds for one cycle. Defaults to `defaultDuration` (0.3). */
   duration?: number;
-  /** Defaults to `defaultEase` ('outQuad'). */
+  /** A name (`'outBack'`), a constant (`Ease.OutBack`) or a function. Defaults to `defaultEase` ('outQuad'); `Ease.Default` asks for it explicitly. */
   ease?: Ease;
   /** Seconds to wait before the first cycle. */
   startDelay?: number;
@@ -197,7 +197,8 @@ export class Tween implements PromiseLike<void> {
     this._cycles = cycles;
     this._infinite = cycles === -1;
     this._mode = o.cycleMode ?? 'restart';
-    this._ease = resolveEase(o.ease ?? settings.defaultEase);
+    const ease = o.ease ?? 'default';
+    this._ease = resolveEase(ease === 'default' ? settings.defaultEase : ease);
     this.finished = new Promise<void>((resolve) => {
       this._resolve = resolve;
     });
@@ -525,12 +526,14 @@ export class Tween implements PromiseLike<void> {
   private _renderCycle(cycle: number, u: number): void {
     const r = this._claim();
     if (!r) return;
-    const ease = this._ease;
+    // The ends of a cycle are exact, so tweens land precisely on their start and end values.
+    const curve = this._ease;
+    const ease = (t: number): number => (t <= 0 ? 0 : t >= 1 ? 1 : curve(t));
     const odd = cycle % 2 === 1;
     let k: number;
     if (this._mode === 'yoyo' && odd) k = 1 - ease(u);
     else if (this._mode === 'rewind' && odd) k = ease(1 - u);
-    else k = u >= 1 ? ease(1) : ease(u);
+    else k = ease(u);
     r.render(k, cycle, u, u * this._cycleDur);
   }
 
