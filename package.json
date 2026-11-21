@@ -1,6 +1,6 @@
 {
   "name": "teemo-tween",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "One-line tweens, sequences and game-feel presets for web games, built on GSAP.",
   "license": "MIT",
   "author": "Dominik Biškupović",
