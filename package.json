@@ -53,7 +53,7 @@
     "check": "scripts/check.sh",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "npm run build && changeset publish"
+    "release": "scripts/release.sh"
   },
   "peerDependencies": {
     "gsap": "^3.13.0",

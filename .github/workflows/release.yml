@@ -1,8 +1,9 @@
 name: Release
 
-# On every push to main: if changesets are pending, open or update the "Version Packages" PR.
-# When that PR is merged (no changesets left, version bumped), publish to npm through
-# trusted publishing (OIDC). No npm token is stored anywhere; provenance is automatic.
+# On every push to main: if changesets are pending, open or update the "Version packages" PR.
+# When that PR is merged (no changesets left, version bumped), scripts/release.sh stages the new
+# version on npm through trusted publishing (OIDC). A maintainer then approves it with 2FA on
+# npmjs.com (Staged Packages). No npm token is stored anywhere.
 on:
   push:
     branches: [main]
@@ -23,7 +24,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      # Trusted publishing needs npm 11.5.1 or later.
+      # Staged publishing through trusted publishing needs npm 11.15.0 or later.
       - run: npm install -g npm@11
       - run: npm ci
       - run: npm run check

@@ -17,8 +17,9 @@ PrimeTween-style animation library for web games on top of GSAP. Public repo, np
 - TypeScript strict, no `any`. ESM only, `sideEffects: false`, GSAP is a peer dependency, no other runtime deps.
 - Size budgets in `.size-limit.json`; raise them only on purpose.
 - Every public function has a test; every public export has TSDoc (the API docs come from it).
-- Each user-facing change needs a changeset (`npx changeset`). Releases go through the Release
-  workflow with npm trusted publishing (OIDC). Never add an npm token anywhere.
+- Each user-facing change needs a changeset (`npx changeset`). Merging the "Version packages" PR
+  makes the Release workflow STAGE the version (`scripts/release.sh`, npm trusted publishing,
+  stage-only); Dominik approves it with 2FA on npmjs.com. Never add an npm token anywhere.
 - No secrets in the repo. No AI attribution in commits or PRs.
 - Original work: API inspired by PrimeTween, but never copy its code or docs.
 
