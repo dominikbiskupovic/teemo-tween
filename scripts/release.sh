@@ -18,7 +18,7 @@ if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1
 fi
 
 npm run build
-npm stage publish
+npm stage publish --loglevel verbose
 echo "Staged $name@$version. Approve it on npmjs.com → Staged Packages, or: npm stage approve <id>"
 # Tag the release; changesets/action pushes the tag and creates the GitHub release.
 npx changeset git-tag
