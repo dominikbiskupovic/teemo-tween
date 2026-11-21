@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Called by the Release workflow (changesets/action) when no changesets are pending.
 # Stages the current version on npm through trusted publishing (OIDC); a maintainer then approves
-# it with 2FA on npmjs.com (Staged Packages) or with `npm stage approve <id>`.
+# it on npmjs.com (Staged Packages).
 set -euo pipefail
 
 name=$(node -p "require('./package.json').name")
@@ -19,6 +19,6 @@ fi
 
 npm run build
 npm stage publish --loglevel verbose
-echo "Staged $name@$version. Approve it on npmjs.com → Staged Packages, or: npm stage approve <id>"
+echo "Staged $name@$version. Approve it on npmjs.com → Staged Packages."
 # Tag the release; changesets/action pushes the tag and creates the GitHub release.
 npx changeset git-tag
