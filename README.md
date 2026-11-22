@@ -1,11 +1,11 @@
 # teemo-tween
 
-**Game feel for the web in one line.** Tweens, sequences and juicy presets (punch, shake, pop, count-up, impact) for browser games. Built on [GSAP](https://gsap.com), typed, tested, about 4 kB, and polite to players who prefer less motion.
+**Game feel for the web in one line.** Tweens, sequences and juicy presets (punch, shake, pop, count-up, impact) for browser games. Runs on the browser's own [Web Animations API](https://developer.mozilla.org/docs/Web/API/Web_Animations_API), so motion can play on the GPU. Zero dependencies, about 7.5 kB, typed, tested in Chromium, Safari's WebKit and Firefox, and polite to players who prefer less motion.
 
 **[▶ Live demo: every tween and preset, with its code](https://dominikbiskupovic.github.io/teemo-tween/)** · [API reference](https://dominikbiskupovic.github.io/teemo-tween/api/)
 
 ```bash
-npm i teemo-tween gsap
+npm i teemo-tween
 ```
 
 ## Three examples
@@ -76,7 +76,7 @@ hitStop(0.05)           // freeze every animation for a moment
 
 Every tween takes `duration`, `ease`, `startDelay`, `endDelay`, `cycles` (-1 is endless), `cycleMode` (`restart`, `yoyo`, `rewind`, `incremental`) and `onComplete`. A tween or sequence can be awaited (`await t` or `t.finished`), and has `stop()`, `complete()`, `isAlive`, `isPaused`, `timeScale` and `duration`.
 
-**Targets.** DOM and SVG elements (GSAP transforms, opacity, colours, CSS variables) and plain objects for canvas or game state (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `alpha`, `color` fields). On HTML elements `Tween.color` animates `background-color` by default; a `background-image` (such as a gradient) paints over it, so pass `property: 'color'` or another property when needed.
+**Targets.** DOM and SVG elements (position, scale, rotation, opacity, colours, any CSS property, CSS variables) and plain objects for canvas or game state (`x`, `y`, `scaleX`, `scaleY`, `rotation`, `alpha`, `color` fields). On HTML elements `Tween.color` animates `background-color` by default; a `background-image` (such as a gradient) paints over it, so pass `property: 'color'` or another property when needed.
 
 **Eases.** All 30 curves from [easings.net](https://easings.net) plus `linear`, using the same formulas. Pick one PrimeTween-style with the `Ease` constants, or as a string:
 
@@ -139,8 +139,10 @@ Both hooks clean up on unmount and work under React 19 strict mode. The core doe
 
 ## Notes
 
-- **GSAP** is a peer dependency, so your game controls its version. GSAP is free for commercial use under Webflow's [standard licence](https://gsap.com/standard-license). teemo-tween does not bundle or redistribute it.
-- ESM only, tree-shakeable, types included. Core is about 4 kB brotli (excluding GSAP), and size budgets are enforced in CI.
+- **How it animates.** On elements, each running tween is a native animation (`element.animate()`): the browser plays position, scale, rotation and opacity itself, often on the GPU, so motion stays smooth even when your game's JavaScript is busy. Plain objects, `custom` and CSS variables update from a single `requestAnimationFrame` loop, which also drives sequences, slow motion and hit stop.
+- **Transforms.** Elements move through the CSS `translate`, `scale` and `rotate` properties, not `transform`, so a `transform` in your own CSS still applies on top. Each axis is its own channel, so an x tween and a y tween can run at the same time.
+- **Browsers.** Native animation needs Chrome/Edge 113+, Safari 17.2+ or Firefox 128+. Older browsers fall back to JavaScript updates every frame.
+- ESM only, tree-shakeable, types included, zero dependencies. About 7.5 kB brotli for the core (9.5 kB with every preset); size budgets are enforced in CI.
 - API inspired by PrimeTween for Unity. This is an independent library, not affiliated with it.
 
 ## Roadmap

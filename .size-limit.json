@@ -1,5 +1,5 @@
 [
-  { "name": "core (Tween + Sequence)", "path": "dist/index.js", "import": "{ Tween, Sequence }", "ignore": ["gsap"], "limit": "4 kB" },
-  { "name": "core + all presets", "path": ["dist/index.js", "dist/presets.js"], "ignore": ["gsap"], "limit": "6 kB" },
-  { "name": "react helpers", "path": "dist/react.js", "import": "{ useTween, useTweenScope }", "ignore": ["gsap", "react"], "limit": "1 kB" }
+  { "name": "core (Tween + Sequence)", "path": "dist/index.js", "import": "{ Tween, Sequence }", "limit": "8 kB" },
+  { "name": "core + all presets", "path": ["dist/index.js", "dist/presets.js"], "limit": "10 kB" },
+  { "name": "react helpers", "path": "dist/react.js", "import": "{ useTween, useTweenScope }", "ignore": ["react"], "limit": "1 kB" }
 ]

@@ -1,5 +1,3 @@
-import { gsap } from 'gsap';
-
 /** A function from linear progress (0..1) to eased progress. It should return 0 at 0 and 1 at 1. */
 export type EaseFunction = (progress: number) => number;
 
@@ -119,15 +117,26 @@ export function resolveEase(ease: Ease): EaseFunction {
 
 type Direction = 'in' | 'out' | 'inOut';
 
+/** Builds in, out and inOut variants from an "in" curve. */
+function directed(easeIn: EaseFunction, direction: Direction): EaseFunction {
+  if (direction === 'in') return easeIn;
+  if (direction === 'out') return (x) => 1 - easeIn(1 - x);
+  return (x) => (x < 0.5 ? easeIn(2 * x) / 2 : 1 - easeIn(2 - 2 * x) / 2);
+}
+
 /** Ease builders for curves that take a parameter. */
 export const eases = {
   /** Back ease with a custom overshoot (default 1.70158). */
   back(overshoot = 1.70158, direction: Direction = 'out'): EaseFunction {
-    return gsap.parseEase(`back.${direction}(${overshoot})`);
+    return directed((x) => (overshoot + 1) * x ** 3 - overshoot * x * x, direction);
   },
   /** Elastic ease: `amplitude` >= 1, `period` in 0..1 (smaller wobbles faster). */
   elastic(amplitude = 1, period = 0.3, direction: Direction = 'out'): EaseFunction {
-    return gsap.parseEase(`elastic.${direction}(${amplitude}, ${period})`);
+    const a = Math.max(1, amplitude);
+    const shift = (period / (2 * PI)) * Math.asin(1 / a);
+    const easeOut = (x: number) =>
+      x <= 0 ? 0 : x >= 1 ? 1 : a * 2 ** (-10 * x) * sin(((x - shift) * 2 * PI) / period) + 1;
+    return directed((x) => 1 - easeOut(1 - x), direction);
   },
   /** Jumps in `count` equal steps (for pixel-art or clock-like motion). */
   steps(count: number): EaseFunction {
@@ -135,3 +144,22 @@ export const eases = {
     return (p) => (p >= 1 ? 1 : Math.floor(p * n) / n);
   },
 } as const;
+
+const cssEasings = new WeakMap<EaseFunction, string>();
+
+/**
+ * The curve as a CSS easing for native animations: `linear(...)` through 64 samples, with exact
+ * ends (tweens always land on their start and end values).
+ */
+export function cssEasing(ease: EaseFunction): string {
+  if (ease === CURVES.linear) return 'linear';
+  let css = cssEasings.get(ease);
+  if (!css) {
+    const n = 64;
+    const points: number[] = [];
+    for (let i = 0; i <= n; i++) points.push(i === 0 ? 0 : i === n ? 1 : Math.round(ease(i / n) * 1e4) / 1e4);
+    css = `linear(${points.join(', ')})`;
+    cssEasings.set(ease, css);
+  }
+  return css;
+}

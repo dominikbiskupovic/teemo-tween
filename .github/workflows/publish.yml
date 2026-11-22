@@ -28,6 +28,7 @@ jobs:
       # Staged publishing through trusted publishing needs npm 11.15.0 or later.
       - run: npm install -g npm@11
       - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit firefox
       - run: npm run check
       - uses: changesets/action@v2
         with:

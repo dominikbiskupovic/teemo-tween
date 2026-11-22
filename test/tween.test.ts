@@ -1,7 +1,6 @@
-import { gsap } from 'gsap';
 import { describe, expect, it, vi } from 'vitest';
 import { configure, eases, resolveEase, Tween } from '../src';
-import { advance, flush } from './clock';
+import { advance, flush, nativeAnimations, transformOf } from './clock';
 
 const el = (): HTMLDivElement => {
   const d = document.createElement('div');
@@ -28,34 +27,85 @@ describe('property tweens', () => {
     expect(o.y).toBeCloseTo(-10);
   });
 
-  it('position, scale, rotation and alpha drive GSAP transforms on elements', () => {
+  it('position, scale, rotation and alpha drive CSS translate, scale, rotate and opacity', () => {
     const d = el();
     Tween.position(d, { to: { x: 30, y: -10 }, duration: 0.2 });
     Tween.scale(d, { to: 2, duration: 0.2 });
     Tween.rotation(d, { to: 45, duration: 0.2 });
     Tween.alpha(d, { from: 1, to: 0.5, duration: 0.2 });
     advance(0.3);
-    expect(gsap.getProperty(d, 'x')).toBe(30);
-    expect(gsap.getProperty(d, 'y')).toBe(-10);
-    expect(gsap.getProperty(d, 'scaleX')).toBe(2);
-    expect(gsap.getProperty(d, 'scaleY')).toBe(2);
-    expect(gsap.getProperty(d, 'rotation')).toBe(45);
-    expect(d.style.opacity).toBe('0.5');
-    // The CSS a browser receives, not just GSAP's cache: every part must carry a valid unit.
-    expect(d.style.transform).toBe('translate(30px, -10px) rotate(45deg) scale(2)');
+    const t = transformOf(d);
+    expect(t.x).toBeCloseTo(30);
+    expect(t.y).toBeCloseTo(-10);
+    expect(t.scaleX).toBeCloseTo(2);
+    expect(t.scaleY).toBeCloseTo(2);
+    expect(t.rotation).toBeCloseTo(45);
+    expect(getComputedStyle(d).opacity).toBe('0.5');
+    // Finished tweens leave plain inline styles behind, no running animations.
+    expect(nativeAnimations(d)).toHaveLength(0);
+    expect(d.style.translate).toBe('var(--tt-x) var(--tt-y)');
+  });
+
+  it('animates elements natively: the browser plays the keyframes, mid-way values are exact', () => {
+    const d = el();
+    Tween.position(d, { from: { x: 0, y: 0 }, to: { x: 100, y: 50 }, duration: 1, ease: 'linear' });
+    Tween.alpha(d, { from: 0, to: 1, duration: 1, ease: 'inQuad' });
+    advance(0.5);
+    const props = nativeAnimations(d).flatMap((a) => Object.keys((a.effect as KeyframeEffect).getKeyframes()[0] ?? {}));
+    expect(props).toEqual(expect.arrayContaining(['translate', 'opacity']));
+    expect(transformOf(d).x).toBeCloseTo(50, 0);
+    expect(transformOf(d).y).toBeCloseTo(25, 0);
+    expect(parseFloat(getComputedStyle(d).opacity)).toBeCloseTo(0.25, 2);
+  });
+
+  it('moves one axis through its own variable, so x and y tweens run side by side', () => {
+    const d = el();
+    Tween.position(d, { to: { x: 40 }, duration: 1, ease: 'linear' });
+    Tween.position(d, { to: { y: 20 }, duration: 1, ease: 'linear' });
+    advance(0.5);
+    expect(transformOf(d).x).toBeCloseTo(20, 0);
+    expect(transformOf(d).y).toBeCloseTo(10, 0);
+    advance(0.6);
+    expect(transformOf(d)).toMatchObject({ x: 40, y: 20 });
+  });
+
+  it('keeps a CSS transform from the page and composes with it', () => {
+    const d = el();
+    d.style.transform = 'translateX(5px)';
+    Tween.position(d, { to: { x: 10, y: 0 }, duration: 0.1 });
+    advance(0.2);
+    expect(d.style.transform).toBe('translateX(5px)');
+    expect(transformOf(d).x).toBeCloseTo(10);
+  });
+
+  it('starts from what the page already shows (translate, scale and rotate in CSS)', () => {
+    const d = el();
+    d.style.translate = '12px 4px';
+    d.style.scale = '2';
+    d.style.rotate = '0.25turn';
+    Tween.position(d, { to: { x: 0 }, duration: 1, ease: 'linear' });
+    Tween.scale(d, { to: { y: 1 }, duration: 1, ease: 'linear' });
+    Tween.rotation(d, { to: 0, duration: 1, ease: 'linear' });
+    advance(0.5);
+    const t = transformOf(d);
+    expect(t.x).toBeCloseTo(6, 0);
+    expect(t.y).toBeCloseTo(4, 0);
+    expect(t.scaleX).toBeCloseTo(2);
+    expect(t.scaleY).toBeCloseTo(1.5);
+    expect(t.rotation).toBeCloseTo(45, 0);
   });
 
   it('writes valid CSS for rotations from every kind of tween', () => {
     const d = el();
     Tween.rotation(d, { from: 0, to: 30, duration: 1, ease: 'linear' });
     advance(0.5);
-    expect(d.style.transform).toMatch(/^rotate\(15(\.\d+)?deg\)$/);
+    expect(transformOf(d).rotation).toBeCloseTo(15, 0);
     Tween.punchRotation(d, { strength: 20, duration: 1 });
     advance(0.1);
-    expect(d.style.transform).toMatch(/rotate\(-?\d+(\.\d+)?deg\)/);
+    expect(transformOf(d).rotation).not.toBeCloseTo(15, 0);
     Tween.properties(d, { to: { rotation: 90 }, duration: 0.1 });
     advance(0.2);
-    expect(d.style.transform).toBe('rotate(90deg)');
+    expect(getComputedStyle(d).rotate).toBe('90deg');
   });
 
   it('scale takes separate axes and alpha uses the alpha field on objects', () => {
@@ -68,25 +118,34 @@ describe('property tweens', () => {
 
   it('color blends background on elements, fill on SVG and color on objects', () => {
     const d = el();
+    const root = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    root.append(svg);
+    document.body.append(root);
     const o = { color: '#000000' };
     Tween.color(d, { from: '#000000', to: '#ff0000', duration: 1, ease: 'linear' });
     Tween.color(svg, { from: '#000000', to: '#00ff00', duration: 1 });
     Tween.color(o, { to: '#0000ff', duration: 1, ease: 'linear' });
     advance(0.5);
-    expect(d.style.backgroundColor).toMatch(/^rgb\(12[78], 0, 0\)$/);
+    expect(getComputedStyle(d).backgroundColor).toMatch(/^rgb\(12[78], 0, 0\)$/);
     expect(o.color).toMatch(/^rgba\(0,0,12[78],1\)$/);
     advance(0.6);
-    expect(svg.style.fill).toBe('rgb(0, 255, 0)');
+    expect(getComputedStyle(svg).fill).toBe('rgb(0, 255, 0)');
+    expect(getComputedStyle(d).backgroundColor).toBe('rgb(255, 0, 0)');
   });
 
   it('properties tweens CSS variables, string values and object fields', () => {
     const d = el();
     const o = { width: 0, label: '0px' };
-    Tween.properties(d, { from: { '--glow': 0 }, to: { '--glow': 1 }, duration: 0.2 });
+    Tween.properties(d, { from: { '--glow': 0 }, to: { '--glow': 1 }, duration: 0.2, ease: 'linear' });
+    Tween.properties(d, { to: { width: 120, filter: 'blur(4px)' }, duration: 0.2, ease: 'linear' });
     Tween.properties(o, { to: { width: 10, label: '20px' }, duration: 0.2 });
-    advance(0.3);
+    advance(0.1);
+    expect(parseFloat(d.style.getPropertyValue('--glow'))).toBeCloseTo(0.5, 1);
+    advance(0.2);
     expect(d.style.getPropertyValue('--glow')).toBe('1');
+    expect(getComputedStyle(d).width).toBe('120px');
+    expect(getComputedStyle(d).filter).toBe('blur(4px)');
     expect(o).toEqual({ width: 10, label: '20px' });
   });
 

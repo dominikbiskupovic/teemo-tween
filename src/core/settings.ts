@@ -1,4 +1,4 @@
-import { gsap } from 'gsap';
+import { freezeFor, setTimeScale } from './clock';
 import type { Ease } from './ease';
 
 /**
@@ -65,30 +65,6 @@ const DEFAULTS: Settings = {
 };
 
 let current: Settings = { ...DEFAULTS, reducedMotionPolicy: { ...DEFAULTS.reducedMotionPolicy } };
-let frozen = false;
-
-let root: gsap.core.Timeline | undefined;
-
-function applyTimeScale(): void {
-  root?.timeScale(frozen ? 0 : current.timeScale);
-}
-
-/**
- * @internal Moves a new animation into the library's own timeline, which carries the global time
- * scale and hit stop. It lives inside GSAP's global timeline and is replaced once it empties.
- */
-export function attach(animation: gsap.core.Animation): void {
-  // An emptied root (its tweens were stopped) keeps a stale playhead: start a fresh one.
-  if (root && (!root.parent || root.getChildren(false).length === 0)) {
-    root.kill();
-    root = undefined;
-  }
-  if (!root) {
-    root = gsap.timeline({ autoRemoveChildren: true, smoothChildTiming: true });
-    applyTimeScale();
-  }
-  root.add(animation, root.rawTime());
-}
 
 /** Changes global settings; returns the full settings now in force. */
 export function configure(input: SettingsInput): Settings {
@@ -104,14 +80,14 @@ export function configure(input: SettingsInput): Settings {
     ...rest,
     reducedMotionPolicy: { ...current.reducedMotionPolicy, ...reducedMotionPolicy },
   };
-  if (rest.timeScale !== undefined) applyTimeScale();
+  if (rest.timeScale !== undefined) setTimeScale(rest.timeScale);
   return getSettings();
 }
 
 /** Puts every setting back to its default. */
 export function resetSettings(): Settings {
   current = { ...DEFAULTS, reducedMotionPolicy: { ...DEFAULTS.reducedMotionPolicy } };
-  applyTimeScale();
+  setTimeScale(1);
   return getSettings();
 }
 
@@ -120,47 +96,19 @@ export function getSettings(): Settings {
   return { ...current, reducedMotionPolicy: { ...current.reducedMotionPolicy } };
 }
 
-let query: MediaQueryList | null | undefined;
-
 /** True when tweens created now will use the reduced-motion policy. */
 export function isReducedMotion(): boolean {
   if (current.reducedMotion === 'always') return true;
   if (current.reducedMotion === 'never') return false;
-  if (query === undefined) {
-    query =
-      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-        ? window.matchMedia('(prefers-reduced-motion: reduce)')
-        : null;
-  }
-  return query?.matches ?? false;
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
 }
 
-let hitStopTimer: ReturnType<typeof setTimeout> | undefined;
-let hitStopEnds = 0;
-let hitStopWaiters: Array<() => void> = [];
-
 /**
- * Freezes every teemo-tween animation for `seconds` of real time: the "hit stop" that makes an impact land.
- * Overlapping calls extend the freeze. Resolves when time runs again.
+ * Freezes every teemo-tween animation for `seconds` of real time: the "hit stop" that makes an
+ * impact land. Overlapping calls extend the freeze. Resolves when time runs again.
  */
 export function hitStop(seconds: number): Promise<void> {
-  if (!(seconds > 0)) return Promise.resolve();
-  const ends = Date.now() + seconds * 1000;
-  const done = new Promise<void>((resolve) => hitStopWaiters.push(resolve));
-  if (ends > hitStopEnds) {
-    hitStopEnds = ends;
-    if (hitStopTimer !== undefined) clearTimeout(hitStopTimer);
-    frozen = true;
-    applyTimeScale();
-    hitStopTimer = setTimeout(() => {
-      frozen = false;
-      hitStopEnds = 0;
-      hitStopTimer = undefined;
-      applyTimeScale();
-      const waiters = hitStopWaiters;
-      hitStopWaiters = [];
-      for (const w of waiters) w();
-    }, seconds * 1000);
-  }
-  return done;
+  return freezeFor(seconds * 1000);
 }

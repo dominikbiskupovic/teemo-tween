@@ -3,6 +3,8 @@ import { Sequence, Tween } from '../src';
 import { advance, flush } from './clock';
 
 const lin = { ease: 'linear' as const };
+/** Rounds away floating-point noise from millisecond clock steps. */
+const round = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Math.round(v * 1e6) / 1e6]));
 
 describe('Sequence', () => {
   it('chain plays one after another, group together, insert at a time', () => {
@@ -14,9 +16,9 @@ describe('Sequence', () => {
       .insert(0.5, Tween.rotation(o, { to: 90, duration: 1, ...lin }));
     expect(s.duration).toBe(2);
     advance(0.5);
-    expect(o).toMatchObject({ x: 5, alpha: 0.5, y: 0, rotation: 0 });
+    expect(round(o)).toMatchObject({ x: 5, alpha: 0.5, y: 0, rotation: 0 });
     advance(1);
-    expect(o).toMatchObject({ x: 10, alpha: 0, y: 5, rotation: 90 });
+    expect(round(o)).toMatchObject({ x: 10, alpha: 0, y: 5, rotation: 90 });
     advance(0.6);
     expect(o.y).toBe(10);
     expect(s.isAlive).toBe(false);
@@ -189,5 +191,23 @@ describe('Sequence', () => {
     expect(() => s.chain(Sequence.create({ cycles: -1 }))).toThrow(/endless sequence/);
     s.stop();
     expect(() => s.chain(Tween.delay(1))).toThrow(/finished/);
+  });
+});
+
+describe('Sequence on elements', () => {
+  it('ends every tween on its exact end values, even when frame times do not add up exactly', async () => {
+    const { transformOf } = await import('./clock');
+    const d = document.createElement('div');
+    document.body.append(d);
+    Sequence.create()
+      .chain(Tween.scale(d, { to: 1.3 }))
+      .group(Tween.rotation(d, { to: 15 }))
+      .chainDelay(0.1)
+      .chain(Tween.scale(d, { to: 1, ease: 'outBack' }))
+      .group(Tween.rotation(d, { to: 0 }))
+      .insert(0.15, Tween.shakePosition(d, { strength: 5 }));
+    advance(1);
+    expect(transformOf(d)).toMatchObject({ x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 });
+    expect(d.getAnimations()).toHaveLength(0);
   });
 });
