@@ -25,45 +25,45 @@ describe('global settings', () => {
     const frozen = o.x;
     configure({ timeScale: 1 });
     advance(0.5);
-    expect([frozen, o.x]).toEqual([0.5, 0.75]);
+    expect(frozen).toBeCloseTo(0.5);
+    expect(o.x).toBeCloseTo(0.75);
   });
 
   it('hitStop freezes animations for real time, overlapping calls extend it', async () => {
-    vi.useFakeTimers();
-    try {
-      const o = { x: 0 };
-      Tween.position(o, { to: { x: 1 }, duration: 1, ease: 'linear' });
-      advance(0.25);
-      const done = hitStop(0.1);
-      void hitStop(0.05); // shorter: does not cut the first one short
-      advance(0.5);
-      expect(o.x).toBeCloseTo(0.25);
-      vi.advanceTimersByTime(100);
-      await done;
-      advance(0.25);
-      expect(o.x).toBeCloseTo(0.5);
-      await expect(hitStop(0)).resolves.toBeUndefined();
-    } finally {
-      vi.useRealTimers();
-    }
+    const o = { x: 0 };
+    Tween.position(o, { to: { x: 1 }, duration: 1, ease: 'linear' });
+    advance(0.25);
+    const done = hitStop(0.1);
+    void hitStop(0.05); // shorter: does not cut the first one short
+    advance(0.08);
+    expect(o.x).toBeCloseTo(0.25);
+    advance(0.02);
+    await done;
+    advance(0.25);
+    expect(o.x).toBeCloseTo(0.5);
+    await expect(hitStop(0)).resolves.toBeUndefined();
   });
 });
 
 describe('reduced motion', () => {
-  const mockMedia = (matches: boolean): void => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches });
-  };
-
-  it('auto follows prefers-reduced-motion; always and never override it', async () => {
-    vi.resetModules();
-    mockMedia(true);
-    const fresh = await import('../src/core/settings');
-    expect(fresh.isReducedMotion()).toBe(true);
-    fresh.configure({ reducedMotion: 'never' });
-    expect(fresh.isReducedMotion()).toBe(false);
-    expect(isReducedMotion()).toBe(false); // the original module has no matching query
-    configure({ reducedMotion: 'always' });
-    expect(isReducedMotion()).toBe(true);
+  it('auto follows prefers-reduced-motion; always and never override it', () => {
+    const original = window.matchMedia;
+    const media = (matches: boolean) => {
+      window.matchMedia = vi.fn().mockReturnValue({ matches }) as unknown as typeof window.matchMedia;
+    };
+    try {
+      media(true);
+      expect(isReducedMotion()).toBe(true);
+      configure({ reducedMotion: 'never' });
+      expect(isReducedMotion()).toBe(false);
+      media(false);
+      configure({ reducedMotion: 'auto' });
+      expect(isReducedMotion()).toBe(false);
+      configure({ reducedMotion: 'always' });
+      expect(isReducedMotion()).toBe(true);
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('moves jump to their end state; callbacks and promises still run', async () => {

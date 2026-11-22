@@ -1,7 +1,7 @@
 {
   "name": "teemo-tween",
   "version": "0.1.1",
-  "description": "One-line tweens, sequences and game-feel presets for web games, built on GSAP.",
+  "description": "One-line tweens, sequences and game-feel presets for web games, built on the Web Animations API.",
   "license": "MIT",
   "author": "Dominik Biškupović",
   "type": "module",
@@ -9,14 +9,15 @@
   "keywords": [
     "tween",
     "animation",
-    "gsap",
+    "web-animations",
     "game",
     "game-feel",
     "juice",
     "shake",
     "punch",
     "sequence",
-    "react"
+    "react",
+    "waapi"
   ],
   "files": [
     "dist"
@@ -56,7 +57,6 @@
     "release": "scripts/release.sh"
   },
   "peerDependencies": {
-    "gsap": "^3.13.0",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
@@ -73,9 +73,9 @@
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitest/browser-playwright": "^5.1.1",
     "eslint": "^10.15.0",
-    "gsap": "^3.15.1",
-    "jsdom": "^31.0.1",
+    "playwright": "^1.65.1",
     "publint": "^0.3.25",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

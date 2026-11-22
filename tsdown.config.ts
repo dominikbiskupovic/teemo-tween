@@ -12,6 +12,6 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: false,
-  deps: { neverBundle: ['gsap', 'react'] },
+  deps: { neverBundle: ['react'] },
   outputOptions: { chunkFileNames: 'core-[hash].js' },
 });

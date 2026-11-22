@@ -1,5 +1,6 @@
 /**
- * teemo-tween: one-line tweens, sequences and game-feel presets for web games, built on GSAP.
+ * teemo-tween: one-line tweens, sequences and game-feel presets for web games, built on the Web
+ * Animations API.
  *
  * @packageDocumentation
  */
@@ -36,4 +37,5 @@ export type {
   Settings,
   SettingsInput,
 } from './core/settings';
-export type { TweenTarget, Value } from './core/target';
+export type { TweenTarget } from './core/element';
+export type { Value } from './core/value';

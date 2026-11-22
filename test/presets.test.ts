@@ -1,8 +1,7 @@
-import { gsap } from 'gsap';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { configure, Sequence, Tween } from '../src';
 import * as P from '../src/presets';
-import { advance } from './clock';
+import { advance, transformOf } from './clock';
 
 const el = (text = ''): HTMLDivElement => {
   const d = document.createElement('div');
@@ -10,7 +9,7 @@ const el = (text = ''): HTMLDivElement => {
   document.body.append(d);
   return d;
 };
-const get = (t: Element, p: string): number => Number(gsap.getProperty(t, p));
+const get = (t: Element, p: 'x' | 'y' | 'scaleX' | 'scaleY' | 'rotation'): number => transformOf(t)[p];
 
 describe('presets', () => {
   it('popIn grows from 0 with overshoot and fades in; popOut reverses it', () => {
@@ -147,23 +146,18 @@ describe('presets', () => {
     expect(d.style.filter).toBe('brightness(1)');
   });
 
-  it('impact punches, shakes and flashes, with an optional hit stop', async () => {
-    vi.useFakeTimers();
-    try {
-      const d = el();
-      const s = P.impact(d, { strength: 1, hitStop: 0.05 });
-      advance(0.1);
-      expect(get(d, 'scaleX')).toBe(1); // frozen by the hit stop
-      vi.advanceTimersByTime(60);
-      advance(0.1);
-      expect(get(d, 'scaleX')).not.toBe(1);
-      advance(1);
-      expect(s.isAlive).toBe(false);
-      expect(get(d, 'x')).toBe(0);
-      expect(d.style.filter).toBe('brightness(1)');
-    } finally {
-      vi.useRealTimers();
-    }
+  it('impact punches, shakes and flashes, with an optional hit stop', () => {
+    const d = el();
+    const s = P.impact(d, { strength: 1, hitStop: 0.05 });
+    advance(0.04);
+    expect(get(d, 'scaleX')).toBe(1); // frozen by the hit stop
+    advance(0.1);
+    expect(get(d, 'scaleX')).not.toBe(1);
+    advance(1);
+    expect(s.isAlive).toBe(false);
+    expect(get(d, 'x')).toBeCloseTo(0);
+    expect(get(d, 'scaleX')).toBeCloseTo(1);
+    expect(getComputedStyle(d).filter).toBe('brightness(1)');
   });
 
   it('countUp formats while counting and lands on the exact value', () => {
@@ -181,7 +175,7 @@ describe('presets', () => {
   it('meterFill scales a bar to its value from its start', () => {
     const d = el();
     P.meterFill(d, { value: 0.5 });
-    expect(d.style.transformOrigin).toBe('left center');
+    expect(d.style.transformOrigin).toMatch(/^left center/); // Firefox adds ' 0px'
     let peak = 0;
     for (let i = 0; i < 40; i++) {
       advance(1 / 60, 1);
